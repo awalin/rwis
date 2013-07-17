@@ -1,0 +1,153 @@
+/*div#container {
+    display: none;
+    }
+ */
+/*From color brewer: REd to blue divergent scale, 10 values */
+.circle-color-0{fill: #A50026; }
+.circle-color-1{fill: #D73027; }
+.circle-color-2{fill: #F46D43; }
+.circle-color-3{fill: #FDAE61; }
+.circle-color-4{fill: #FEE090; }
+.circle-color-5{fill: #E0F3F8; }
+.circle-color-6{fill: #ABD9E9; }
+.circle-color-7{fill: #74ADD1; }
+.circle-color-8{fill: #4575B4; }
+.circle-color-9{fill: #313695; }
+
+.circle-color-0{stroke: #A50026; }
+.circle-color-1{stroke: #D73027; }
+.circle-color-2{stroke: #F46D43; }
+.circle-color-3{stroke: #FDAE61; }
+.circle-color-4{stroke: #FEE090; }
+.circle-color-5{stroke: #E0F3F8; }
+.circle-color-6{stroke: #ABD9E9; }
+.circle-color-7{stroke: #74ADD1; }
+.circle-color-8{stroke: #4575B4; }
+.circle-color-9{stroke: #313695; }
+
+div#loading {
+    top: 200px;
+  left:50%;
+    height: 400px;
+    width:  400px;    
+    position: absolute;
+    z-index: 1000;    
+    cursor: wait;
+    border-radius: 5px;
+    text-align:center;
+    opacity: 0.75;
+	filter: alpha(opacity=75);
+	display: table;
+    }
+    
+#loading img{
+	display:block;
+	vertical-align:middle;
+}    
+   
+body {
+  font: 14px sans-serif;
+  background-color: #F5F5FD;
+}
+
+div .series{
+	background-color: white;
+	padding-left:20px;
+	padding-top:5px;
+	padding-bottom:2	px;
+	margin:5px;
+	-moz-border-radius: 5px;
+	border-radius: 5px;	
+	-moz-box-shadow: 0 0 5px #888;
+	-webkit-box-shadow: 0 0 5px#888;
+	box-shadow: 0 0 5px #888;
+}
+
+#timeline{
+	
+       _height: expression( this.scrollHeight > 800 ? "800px" : "auto" ); /* sets max-height for IE6 */
+       max-height:800px; /* sets max-height value for all standards-compliant browsers */
+       overflow-y:auto;
+       overflow-x: hidden;
+}
+
+circle{
+	fill-opacity: 0.4;
+}
+
+
+
+.title { 
+	padding-left:10px;
+	font-size: 1em;
+	 }
+.subtitle { font-size: -.8em; }
+
+path.line {
+  fill: none;
+  stroke: #008b8b;
+  stroke-width: 1.5px;
+}
+
+path.area {
+  fill: #e7e7e7; 
+}
+
+path.area-fill{
+	/* fallback */
+	background-color: #063053;
+	/* chrome 2+, safari 4+; multiple color stops */
+	background-image:-webkit-gradient(linear, left bottom, left top, color-stop(0.32, #063053), color-stop(0.66, #395873), color-stop(0.83, #5c7c99));
+	/* chrome 10+, safari 5.1+ */
+	background-image: -webkit-linear-gradient(#063053, #395873, #5c7c99);
+	/* firefox; multiple color stops */
+	background-image: -moz-linear-gradient(top,#063053, #395873, #5c7c99);
+	/* ie 6+ */
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#063053', endColorstr='#395873');
+	/* ie8 + */
+	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr='#063053', endColorstr='#395873')";
+	/* ie10 */
+	background-image: -ms-linear-gradient(#063053, #395873, #5c7c99);
+	/* opera 11.1 */
+	background-image: -o-linear-gradient(#063053, #395873, #5c7c99);
+	/* The "standard" */
+	background-image: linear-gradient(#063053, #395873, #5c7c99);
+}
+
+#xAxis{
+	
+  cursor: move; 
+  pointer-events: all;
+}
+
+.axis {
+  shape-rendering: crispEdges;
+  font-size: 12px; 
+}
+
+.rect{
+ stroke: #A9A9A9;	
+ shape-rendering: crispEdges;
+ stroke-opacity: .8;
+
+}
+
+
+.x.axis line {
+  stroke: #A9A9A9;
+}
+
+.x.axis .minor {
+  stroke-opacity: .5;
+}
+
+.x.axis path {
+ /* display: none;*/
+  fill: none;
+  stroke: #A9A9A9;
+}
+
+.y.axis line, .y.axis path {
+  fill: none;
+  stroke: #A9A9A9;
+}
