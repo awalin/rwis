@@ -35,7 +35,7 @@ class FetchObservations(View):
         try: 
             
             json_data = simplejson.loads(request.body)   
-#             print 'Raw Data: "%s"' % request.body
+            print 'Raw Data: "%s"' % request.body
 #             print json_data
             self.startTime = str(json_data['startTime'])
 #             self.startTime = '2013-07-09 00:00:00';           
@@ -58,13 +58,15 @@ class FetchObservations(View):
                 data = {}                
                 obsStr = str(obs)                
                 
-                cursor.execute("SELECT observation_id, TO_CHAR(tstamp, 'YYYY-MM-DD HH24:MI:SS') AS tstamp, clarus.sensor.observation_type AS type, metric_value " +
+                cursor.execute("SELECT "+
+                            "TO_CHAR( (date_trunc('hour', tstamp) + INTERVAL '15 min' * ROUND(date_part('minute', tstamp) / 15.0)), 'YYYY-MM-DD HH24:MI' ) AS tstamp, "+ 
+                            "AVG( metric_value ) AS metric_value " +
                             "FROM clarus.observation, clarus.sensor "+
                             "WHERE clarus.observation.sensor_id=clarus.sensor.sensor_id "+
                             "AND station_id IN (" + stationList + ") AND observation_type = " + obsStr + " "+ 
-                            "AND tstamp >= (timestamp '"+self.startTime+"' - INTERVAL '1 week') AND tstamp < timestamp '"+self.startTime+"' " +
-#                             "Limit 500");    
-                            "ORDER BY tstamp asc");
+                            "AND tstamp >= (timestamp '"+self.startTime+"' - INTERVAL '1 week') AND tstamp < timestamp '"+self.startTime+"' " +  
+                            "GROUP BY date_trunc('hour', tstamp) + INTERVAL '15 min' * ROUND(date_part('minute', tstamp) / 15.0) "+
+                            "ORDER BY tstamp asc"  );
                                                 
                 data['rows'] = [dict((cursor.description[i][0], value) 
                     for i, value in enumerate(row)) for row in cursor.fetchall()]   
