@@ -1,22 +1,11 @@
 var csrftoken = $.cookie('csrftoken');
-  
+	
 function csrfSafeMethod(method) {
 	        return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
 	    }
 
 var colorScale = d3.scale.linear().range([0,9]);
-	
-var xScale= d3.time.scale();
-var xAxis = d3.svg.axis().ticks(10).tickSubdivide(true).orient("top");   
-var prevWeek;
-var stationID;
-var xWidth;
-var currenttime = new Date();
-prevWeek = +currenttime;
-var observationTypes; 
-var aspectRatio ;
 
-//color category
 var xScale= d3.time.scale(),
     xAxis = d3.svg.axis().ticks(10).tickSubdivide(true).orient("top"),
     prevWeek,
@@ -28,58 +17,33 @@ var xScale= d3.time.scale(),
     aspectRatio,
     p = d3.scale.category10();
 
-var format=d3.time.format("%Y-%m-%d %H:%M:%S");
+var format=d3.time.format("%Y-%m-%d %H:%M");
 var parse =format.parse;
 var length = 0;
 var m = [20, 60, 10, 60],
     width,	
     height = 800 - m[0] - m[2];
-
     
 var eachHeight = 80; //change so that margin is always 5% of the height
+
+var zoom = d3.behavior.zoom()
+             .on("zoom", function(){                                      
+                    var tx = d3.select(".x.axis").call(xAxis);                    	
+                    timelineDataAll.forEach(function(d, i){
+    	   				var id = "#chart-" + i;
+                        var circles = d3.select(id).selectAll("circle")
+                           				.transition()
+                           				.duration(250)	
+                           				.attr("cx", function(d){return xScale(d.tstamp);}); 
+                    });
+               });
 
 var timelineDataAll='';
 
 // A line generator, for the dark stroke.
 var line = d3.svg.line()
     .interpolate("linear")
-    .x(function(d) { return xScale(d.tstamp); });  
-
-var zoom = d3.behavior.zoom() 	
- 	.on("zoom", zoomTimeline);
-
-function zoomTimeline(){
-	
-	console.log("on zoom "+xScale.domain()[0]);	
-	var domMin = +(xScale.domain()[0]) + 1*24*60*60*1000;
-	//console.log(domMin);	
-	var domMax =  +(xScale.domain()[1]) - 1*24*60*60*1000;
-	//console.log(domMax);	
-	if(domMax<=domMin){
-		return;		
-	}
-	
-	domMin = new Date(domMin);
-	domMax = new Date(domMax);
-	
-	xScale.domain([domMin, domMax]);
-	
-	console.log(xScale.domain()[0]);	
-	console.log(xScale.domain()[1]);	
-	xAxis.scale(xScale);	
-	var tx = d3.select(".x.axis").call(xAxis); 	
-	
-	timelineDataAll.forEach(function(d, i){
-		
-         //console.log("zooming circles");
-         var id = "#chart-" + i;
-      	 var circles =  d3.select(id).selectAll("circle")            
-		      .transition()
-	    		.delay(function(d,i){ return i*2;})		 		
-		 		.attr("cx", function(d){return xScale(d.tstamp);})
-		 		.attr("r", 2);                 	         
-	});   	
-}
+    .x(function(d) { return xScale(d.tstamp); }); 
 
 function getPrevWeekData(prevWeek){
 	 var dt= new Date(prevWeek);	    
@@ -133,9 +97,6 @@ function getPrevWeekData(prevWeek){
 	   					var color = p(i); 					
 	   					var id = "#chart-" + i;
 	   					var title = Stockpile.meta.obsType[d.title];
-	   					//var elem = d3.select("#parent")
-	   					//   	.selectAll(".series").select(function(d,i2){
-	   					   		//     return (i==i2)?this:null;});
 	   					   			
 	   					var t = d3.select(id).transition().duration(750);							
 	   					var timelineData = d.rows;
@@ -157,31 +118,23 @@ function getPrevWeekData(prevWeek){
 	   					}
 	   					else if(timelineData.length>0){						
 	   						
-	   						var yMax = d3.max( timelineData, function(d) { return d.metric_value; });
-							var yMin = d3.min( timelineData, function(d) { return d.metric_value; });
+	   					   var yMax = d3.max( timelineData, function(d) { return d.metric_value; });
+						   var yMin = d3.min( timelineData, function(d) { return d.metric_value; });
 							
-							var yScale = d3.scale.linear()
+						   var yScale = d3.scale.linear()
 								.domain([yMin, yMax]).nice()
 								.rangeRound([eachHeight, 0]).nice();
 							
-							colorScale.domain([yMin, yMax]).nice();								
-							var yAxis = d3.svg.axis().scale(yScale).ticks(5).orient("left");								
-										      
-							//line.y(function(d) { return yScale(d.metric_value); });						 
-						    //var line1 = t.select(".line");						    
-						    //line1.attr("d", line(timelineData));							    					    
+						   colorScale.domain([yMin, yMax]).nice();								
+						   var yAxis = d3.svg.axis().scale(yScale).ticks(5).orient("left");   					    
 							
-                          t.select(".y.axis").call(yAxis);
+                           t.select(".y.axis").call(yAxis);
                           
-                          t.each("end", function(){
+                           t.each("end", function(){
                         	  
                           	 var circles =  d3.select(id).selectAll("circle")
                                  .data(timelineData, function(d){ return d.tstamp; })			
 						      .enter().append("circle")
-//						        .attr("class", function(d){	 		
-//						        	console.log("circle  "+Math.round(colorScale(d.metric_value)));
-//						        	return "circle-color-"+Math.round(colorScale(d.metric_value));
-//						        		})
 						      	.attr("stroke", color).attr("fill", color)
 						      .transition()
 					    		.delay(function(d,i){
@@ -190,7 +143,7 @@ function getPrevWeekData(prevWeek){
 								.attr("cy", function(d){return yScale(d.metric_value);})
 								.attr("r", 3);
 								
-							d3.select(id).selectAll("circle")
+							 d3.select(id).selectAll("circle")
 								.append("title")
 								.attr("class","title")
 								.text( function(d){
@@ -219,7 +172,7 @@ function prepXaxis(){
 	    // Parse dates and numbers. We assume values are sorted by date.
 		   	timelineData.forEach(function(d) {
 		    	d.tstamp = parse(d.tstamp);
-		    // console.log(d.tstamp);  
+//		    	console.log(d.tstamp);
 		    });   
 		  
 		   	xMax = d3.max( [xMax, d3.max( timelineData, function(d) { return d.tstamp; })] ); 
@@ -228,9 +181,8 @@ function prepXaxis(){
 		}); 
 	//console.log(prevWeek);
 	prevWeek -= 7*24*60*60*1000;//upto milliseconds
-	//console.log(prevWeek);
-	xScale.domain([xMin, xMax]);	
-	
+	//console.log(prevWeek);	
+	xScale.domain([xMin, xMax]);		
 }
 
 function prepCanvas(){
@@ -239,12 +191,12 @@ function prepCanvas(){
 	.on("click", function(){
 		getPrevWeekData(prevWeek);	
 	});  
-	var xaxis= d3.select("#timeline").select("#xAxis")	             
-	             .attr("class","series");	
-	// xaxis.attr("id","zoom").attr("class","btn btn-mini btn-info").append("text").text("zoom");
-	
+	var xaxis= d3.select("#timeline")
+				 .select("#xAxis")	             
+	             .attr("class","series");		
 	//adding zoom behavior	
 	d3.select("#xAxis").call(zoom);	
+	
 	var parentWidth = $("#xAxis").width();
  	
 	xWidth = parentWidth - m[1] -m[3];		
@@ -254,6 +206,8 @@ function prepCanvas(){
 	var h = m[0]+m[2];	
 	
 	xAxis.scale(xScale);
+	
+	zoom.x(xScale); //setting teh scale of the zoom level
 	
 	xaxis
 	    .append("svg:svg").attr("class","svg-container")
@@ -298,6 +252,10 @@ function prepCanvas(){
 	}).trigger("resize");
 }   
 
+/****************
+* sends ajax request to the view to call database *
+* gets data from the request, and passes to the drawing function *
+****************/
 
 function getTimelineData(station_id) {	
 	
@@ -309,11 +267,10 @@ function getTimelineData(station_id) {
     stationID.push(2866); //station_id;    
     //it will change later to read observation types from the input   
     observationTypes = new Array();
+    //this will change to an iteration loop that will push the types from the input
     observationTypes.push(206);
     observationTypes.push(575);
     observationTypes.push(5733); 
-    
-    
 	    
     var currenttime = new Date();
     prevWeek = +currenttime;
@@ -324,7 +281,7 @@ function getTimelineData(station_id) {
     		          obsType: observationTypes,    		          
     		          };
     parameters = JSON.stringify(parameters);
-    console.log(parameters);
+//    console.log(parameters);
     
     $.ajaxSetup({    	
         crossDomain: false, // obviates need for sameOrigin test        
@@ -378,9 +335,10 @@ function drawTimeSeries(data){
 //now draw each timeline     
 timelineDataAll.forEach(function(d,i){	
 	
-   var timelineData = d.rows;
+    var timelineData = d.rows;
     var color = p(i);
     var title = Stockpile.meta.obsType[d.title];
+    
     var svg = d3.select("#parent");	
     
 	var div1=svg.append("div").attr("class","series");
@@ -388,14 +346,14 @@ timelineDataAll.forEach(function(d,i){
 	if(title.metric==null){
 			title.metric="";
 		}
-   else {
-			title.metric="<small> in "+title.metric+"</small>";
+    else {
+			title.metric=" in "+title.metric+"";
 		}
 	
 	
 	div1.append("div").attr("class","title")
 	     .html("<strong>"+title.name+"</strong>"
-	      + title.metric
+	      + "<small>"+ title.metric + "</small>" + 
 	      + "<br/>"
 	      + title.description);
 	//static elements       
@@ -426,12 +384,8 @@ timelineDataAll.forEach(function(d,i){
 	  .attr("x", 0)
 	  .attr( "y", eachHeight)
 	  .attr ("width", xWidth)
-	  .attr("height",1);		
+	  .attr("height",1);
 	
-//	 var line1 = g1.append("svg:path")
-//		         .attr("class", "line")
-//		         .attr("clip-path", "url(#clip)");  
-	 
 	 if(timelineData.length>0){  		 
 		    //now dyamic elements
 		var yMax = d3.max( timelineData, function(d) { return d.metric_value; });
@@ -445,22 +399,7 @@ timelineDataAll.forEach(function(d,i){
 		g1.append("svg:g")
 	      .attr("class", "y axis")
 	      .attr("transform", "translate(-5, 0)")	      
-	      .call(yAxis);   
-	
-	 //console.log("after y axis");
-	 // Add the line path.
-	//line.y(function(d) { return yScale(d.metric_value); }); 
-	//line1.attr("d", line(timelineData));        
-	      
-	 //var totalLength = line1.node().getTotalLength();
-	 //length = totalLength ; 
-	 
-	//  line1.attr("stroke-dasharray", totalLength + " " + totalLength)
-	       //  .attr("stroke-dashoffset", totalLength)
-	      //  .transition()
-	        //  .duration(1000)
-	        //  .ease("linear")
-	        //  .attr("stroke-dashoffset", 0) ;	        
+	      .call(yAxis);      
 		
 	var circles = g1.append("svg:svg")
 	             .attr("id",id).attr("clip-path", "url(#clip)")
@@ -468,11 +407,7 @@ timelineDataAll.forEach(function(d,i){
 	        .data(timelineData ,function(d){return d.tstamp;})						
 	 		.enter().append("svg:circle")
 	 			.attr("stroke",color)
-	 			.attr("fill", color)	
-//	 			.attr("class", function(d){
-//	 				console.log("circle-color-"+Math.round(colorScale(d.metric_value)) );	 				
-//	 				return "circle-color-"+Math.round(colorScale(d.metric_value));
-//	 			})
+	 			.attr("fill", color)
 	 	   .transition()
 	       .delay(function(d){ return xScale(d.tstamp)*2;	})		 			 		
 	 		.attr("cx", function(d){return xScale(d.tstamp);})
