@@ -1,61 +1,496 @@
 <!DOCTYPE html>
 <html>
-<head>
-<meta charset="UTF-8">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>Timeline </title>
-{% load staticfiles %}
-<!-- {% csrf_token %} -->
-<link rel="stylesheet" href="{% static "css/normalize.css" %}">
-<link rel="stylesheet" href="{% static "css/bootstrap.css" %}">
-<link rel="stylesheet" href="{% static "css/csstemplate.css" %}" >  
-<script src="{% static "js/lib/jquery/jquery-1.10.2.js" %}"></script>
-<script src="{% static "js/lib/jquery/jquery-ui-1.10.3.custom.js" %}"></script>
-<script src="{% static "js/lib/jquery/jquery.cookie.js" %}"></script>
-<script src="{% static "js/lib/csrf.js" %}"></script>
+	<head>
 
-<!--[if lte IE 8]>
-	<script src="{% static "js/lib/r2d3.js" %}" charset="utf-8"></script>
-<![endif]-->
-<!--[if lt IE 9]>
-		<script src="{% static "js/lib/aight/aight.js" %}" type="text/javascript"></script>
-		<![endif]-->
-<!--[if gte IE 9]><!-->	
-<script src="{% static "js/lib/d3.v3.js" %}"></script>
-<!--<![endif]-->
+		<meta charset='utf-8'>
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="viewport" content="width=device-width">
 
-<script src="{% static "js/timelines.js" %}"></script>
+		<title>RWIS Explorer</title>
 
-<!-- <script type="text/javascript">// <![CDATA[
-        function preloader(){
-            document.getElementById("loading").style.display = "none";
-            document.getElementById("parent").style.display = "block";
-        }//preloader
-        window.onload = preloader;
-// ]]></script> -->
+		{% load staticfiles %}
+		
+		{% include "includes/pre_css.html" %}
+		{% include "includes/css.html" %}
 
-</head>
+	</head>
+	<body>
+		<div id="appLoading">
+			<div>
+				<h1>RWIS Explorer</h1>
+				<p>Loading...</p>
+			</div>
+		</div>
 
-<body  onload='getTimelineData()'>
+		<div id="treeHover" class="treeHover"></div>
+		<div id="mapSidebarCover" class="cover"></div>
+		<div id="mapSidebar" class="sidebar">
 
-<div id="main" class="container-fluid">
-	<div id="banner" style="text-align: center;">
-		<h3>Observations from station 2866</h3>	
-	</div>
-	<div id="loading"></div>
-	<div id="container">
-	 <div id="timeline" class="row-fluid" style="background-color:#F8F8F8 ;">	
-	 	<div>
-	 		<div id="xAxis"></div>
-	 		<div id="parent"></div>
-	 	</div>	
-	 </div>	 
-     <div id="prev" class="btn btn small btn-info">Prev week</div>	 
-	 </div>
-	</div> 
-	 
+			<div id="treeContainer" class="panel border">
+				<div id="treeHeader">
+					<div id="toprow">
+						<strong>RWIS Explorer</strong>
+						<a href="help.html" target="_blank" class="linkButton">Help</a>
+					</div>
+					<div id="groupbyrow">
+						Group By:
+						<select>
+							<option>State > County > Location</option>
+							<option>State > Road > Location</option>
+						</select>
+					</div>
+					<div id="filterBy">
+						Filtered By: 
+						<img src="{% static "img/filter/AgencyIcon.png" %}"/>
+						<img src="{% static "img/filter/RegionIcon.png" %}"/>
+						<img src="{% static "img/filter/RoadIcon.png" %}"/>
+						<img src="{% static "img/filter/SensorTypeIcon.png" %}"/>
+						<!-- 
+						<img src="{% static "img/filter/AgencyIconDisabled.png" %}"/>
+						<img src="{% static "img/filter/RegionIconDisabled.png" %}"/>
+						<img src="{% static "img/filter/RoadIconDisabled.png" %}"/>
+						<img src="{% static "img/filter/SensorTypeIconDisabled.png" %}"/>
+						 -->
+						<button id="filterButton">Filter</button>
+					</div>
+				</div>
+				
+				<div id="tree"></div>
+				
 
-	  
-</body>
+					<div id="selectedStats"><span>No stations selected.</span><img src="{% static "img/cross.png" %}"/></div>
+					<button id="download" type="button" disabled title="Select some stations to download first."><span class="button_img"></span><span class="button_text">Download</span></button>
+					<button id="explore" type="button" disabled title="Select some stations to explore first."><span class="button_img"></span><span class="button_text">Explore</span></button>
 
+			</div>
+
+<!--
+			<div id="treeControls" class="panel border">
+				<div id="selectedStats"><span>No stations selected.</span><img src="{% static "img/cross.png" %}"/></div>
+				<button id="download" type="button" disabled title="Select some stations to download first."><span class="button_img"></span><span class="button_text">Download</span></button>
+				<button id="explore" type="button" disabled title="Select some stations to explore first."><span class="button_img"></span><span class="button_text">Explore</span></button>
+			</div>
+-->
+		</div>
+	
+		
+		<div id="screenCover"></div>
+
+		<div id="downloadPopup" class="border bigPopup">
+			<div class="popupHeader">
+				<h2>Download Data</h2>
+			</div>
+			
+			<form id="exportForm" onsubmit="return false;">
+				<div class="popupScroll">
+					<div class="label">
+						1. Request Name (optional)
+					</div>
+					<div class="option">
+						<input type="text" name="name">
+						<img class="icon" src="{% static "img/information.png" %}">
+					</div>
+	
+					<div class="label">
+						2. Date Range
+					</div>
+					<div class="option">
+						<div id="exportDateRangeOptions">
+							<input class="inputDate" value="09/30/2013">
+							-
+							<input class="inputDate" value="09/30/2013">
+							<br>
+							<input class="inputDate" value="09/30/2013">
+							-
+							<input class="inputDate" value="09/30/2013">
+							<img class="icon" src="{% static "img/cross.png" %}">
+							<br>
+							<input class="inputDate" value="09/30/2013">
+							-
+							<input class="inputDate" value="09/30/2013">
+							<img class="icon" src="{% static "img/cross.png" %}">
+							<br>
+							<input class="inputDate" value="09/30/2013">
+							-
+							<input class="inputDate" value="09/30/2013">
+							<img class="icon" src="{% static "img/cross.png" %}">
+							<br>
+						</div>
+						<button id="addDateRange_btn" type="button">Add another date range</button>
+					</div>
+	
+					<div class="label">
+						3. Days of week
+					</div>
+					<div class="option">
+						<input type="text" name="name">
+						<br>
+						<input type="checkbox">
+						Exclude Holidays <img class="icon" src="{% static "img/information.png" %}">
+					</div>
+	
+					<div class="label">
+						4. Time of day <img class="icon" src="{% static "img/information.png" %}">
+					</div>
+					<div class="option">
+						<select>
+							<option>12</option><option>1</option><option>2</option>
+							<option>3</option><option>4</option><option>5</option>
+							<option>6</option><option>7</option><option>8</option>
+							<option>9</option><option>10</option><option>11</option>
+						</select>
+						:
+						<select>
+							<option>00</option><option>15</option><option>30</option><option>45</option>
+						</select>
+						<select>
+							<option>AM</option><option>PM</option>
+						</select>
+						-to-
+						<select>
+							<option>12</option><option>1</option><option>2</option>
+							<option>3</option><option>4</option><option>5</option>
+							<option>6</option><option>7</option><option>8</option>
+							<option>9</option><option>10</option><option>11</option>
+						</select>
+						:
+						<select>
+							<option>00</option><option>15</option><option>30</option><option>45</option>
+						</select>
+						<select>
+							<option>AM</option><option>PM</option>
+						</select>
+						<br>
+						<select>
+							<option>12</option><option>1</option><option>2</option>
+							<option>3</option><option>4</option><option>5</option>
+							<option>6</option><option>7</option><option>8</option>
+							<option>9</option><option>10</option><option>11</option>
+						</select>
+						:
+						<select>
+							<option>00</option><option>15</option><option>30</option><option>45</option>
+						</select>
+						<select>
+							<option>AM</option><option>PM</option>
+						</select>
+						-to-
+						<select>
+							<option>12</option><option>1</option><option>2</option>
+							<option>3</option><option>4</option><option>5</option>
+							<option>6</option><option>7</option><option>8</option>
+							<option>9</option><option>10</option><option>11</option>
+						</select>
+						:
+						<select>
+							<option>00</option><option>15</option><option>30</option><option>45</option>
+						</select>
+						<select>
+							<option>AM</option><option>PM</option>
+						</select>
+						<img class="icon" src="{% static "img/cross.png" %}">
+						<br>
+						<select>
+							<option>12</option><option>1</option><option>2</option>
+							<option>3</option><option>4</option><option>5</option>
+							<option>6</option><option>7</option><option>8</option>
+							<option>9</option><option>10</option><option>11</option>
+						</select>
+						:
+						<select>
+							<option>00</option><option>15</option><option>30</option><option>45</option>
+						</select>
+						<select>
+							<option>AM</option><option>PM</option>
+						</select>
+						-to-
+						<select>
+							<option>12</option><option>1</option><option>2</option>
+							<option>3</option><option>4</option><option>5</option>
+							<option>6</option><option>7</option><option>8</option>
+							<option>9</option><option>10</option><option>11</option>
+						</select>
+						:
+						<select>
+							<option>00</option><option>15</option><option>30</option><option>45</option>
+						</select>
+						<select>
+							<option>AM</option><option>PM</option>
+						</select>
+						<img class="icon" src="{% static "img/cross.png" %}">
+						<br>
+						<button id="addTimeRange_btn" type="button">
+							Add another time range
+						</button>
+					</div>
+	
+					<div class="label">
+						5. Observation Type <img class="icon" src="{% static "img/information.png" %}">
+					</div>					
+					<div  style='padding:10px;'>
+						  	<input id='dl-all-sensors' class='none linkButton' type="submit" value="Select All">			  	
+				    </div>
+						  
+					<div id="dl-obs">
+								
+	
+					</div>
+
+				</div>
+				
+				<div class="popupControlContainer">
+					
+					<!--
+						<div class="popupControlStats">This is a placeholder for some stats about the options selected.</div>
+					-->
+					
+					<div class="popupControlButtons">
+						<input id="dlPopupRequest" class="linkButton" type="submit" value="Request">
+						<input id="dlPopupReset" class="linkButton" type="submit" value="Reset">
+						<input id="dlPopupCancel" class="linkButton" type="submit" value="Cancel">
+					</div>
+				
+				</div>
+			</form>
+	
+			<script type="text/javascript">
+/*
+				$(fcat1).click( function(){ $(fincat1).toggle(); });
+				$(fcat2).click( function(){ $(fincat2).toggle(); });
+				$(fcat3).click( function(){ $(fincat3).toggle(); });
+				$(fcat4).click( function(){ $(fincat4).toggle(); });
+				$(fcat5).click( function(){ $(fincat5).toggle(); });
+				$(fcat6).click( function(){ $(fincat6).toggle(); });
+				$(fcat7).click( function(){ $(fincat7).toggle(); });
+				$(fcat8).click( function(){ $(fincat8).toggle(); });
+				$(fcat9).click( function(){ $(fincat9).toggle(); });
+				$(fcat10).click( function(){ $(fincat10).toggle(); });
+				$(fcat11).click( function(){ $(fincat11).toggle(); });
+				$(fcat12).click( function(){ $(fincat12).toggle(); });
+				$(fcat13).click( function(){ $(fincat13).toggle(); });
+*/
+			</script>
+		</div>
+			
+		<div id="filterPopup" class="border bigPopup">
+			<div class="popupHeader">
+				<h2>Data Filter Options</h2>
+			</div>
+
+				<div class="popupScroll">
+					<fieldset>
+						<legend><h3><h3>Agency</h3>	</h3></legend>
+
+						<select id="agency" class="jqmulti" multiple="multiple">
+							<option value="option3">FDOT</option>
+							<option value="option1">MD_DOT</option>
+							<option value="option3">NWS</option>
+							<option value="option2">VA_DOT</option>
+						</select>
+						
+ 					</fieldset>
+					
+					
+					<fieldset>
+						<legend><h3> Region	</h3></legend>
+						<div style="width:50%;float:left">
+							<select class="jqmulti" multiple="multiple">
+							<optgroup label="Maryland">
+								<option value="option1">Anne Arundel</option>
+								<option value="option2">Baltimore</option>
+								<option value="option3">Carroll</option>
+								<option value="option4">Cecil</option>
+								<option value="option5">Frederick</option>
+								<option value="option6">Montgomery</option>
+								<option value="option7">Prince Georges</option>
+								<option value="option8">Wicomico</option>
+								
+							</optgroup>
+							<optgroup label="Virginia">
+								<option value="option9">Arlington</option>
+								<option value="option10">Craig</option>
+								<option value="option11">Essex</option>
+								<option value="option12">Fairfax</option>
+								<option value="option13">Hanover</option>
+								<option value="option14">Lee</option>
+								<option value="option15">Shenandoah</option>
+							</optgroup>
+							
+							<optgroup label="Delaware">
+								<option value="option">New Castle</option>
+								<option value="option">Sussex</option>
+							</optgroup>
+							
+							<optgroup label="North Carolina">
+								<option value="option">Alexander</option>
+								<option value="option">Bladen</option>
+							</optgroup>
+							
+							<optgroup label="South Carolina">
+								<option value="option">Aiken</option>
+								<option value="option">Calhoun</option>
+							</optgroup>
+							
+							<optgroup label="Georgia">
+								<option value="option">Bacon</option>
+								<option value="option">Clarke</option>
+							</optgroup>
+							
+							<optgroup label="Florida">
+								<option value="option">Miami-Dade</option>
+								<option value="option">Glades</option>
+							</optgroup>
+							
+							<optgroup label="Alabama">
+								<option value="option">Dale</option>
+								<option value="option">Madison</option>
+							</optgroup>
+							
+							<optgroup label="Mississippi">
+								<option value="option">Alcorn</option>
+								<option value="option">Newton</option>
+							</optgroup>
+							
+						</select>
+						</div>
+						
+						<div style="width:25%;float:right;text-align:right;bottom:20px;">
+						Arlington, Fairfax of VA, PG County of MD, all counties from CA, and 32 other counties are selected.						
+						</div>
+					</fieldset>	
+				
+					<fieldset>
+						
+						<legend><h3>Road</h3></legend>
+					
+					
+						<div id="stateList"></div>
+						<div style='padding-bottom:4px;clear:both;position:relative;' id='roadfilter'>							
+						     
+						</div>
+						
+						<div>
+							<button class='addroad'> Add Road</button>
+						</div>
+						
+ 					</fieldset>
+			
+					<fieldset>
+						<legend><h3>Observation Type</h3></legend>
+						<div style='margin-top:-20px'>	
+						  <div  style='padding-top:10px;'>
+						  	<input id='allsensor' class='none linkButton' type="submit" value="Select All">			  	
+						  </div>
+						  
+						<div  class="row-fluid" style='width:100%' id='sensors'> 
+						 </div>					  	
+						
+					
+						</div>
+						
+					</fieldset>
+				</div>
+				
+			<div class="popupControlContainer">		   	
+				
+				<div class="popupControlButtons">
+		            <button id="filterPopupApply" type="button">Apply</button>
+					<button id="filterPopupReset" type="button">Clear</button>
+					<button id="filterPopupCancel" type="button">Cancel</button>
+				</div>
+ 
+			</div>
+
+		</div>
+		
+		
+			<div id="analyzeSidebar" class="sidebar border">
+				<div>
+					<button id="goback" type="button" title="Return to the map view">			
+						
+					</button>
+				</div>
+				<div id="banner">
+				<div>Weather stations managed by: </div>
+				
+				<div id="managers" style="position:relative">
+					<span class="manager">					
+					</span>
+				<div id="tabs">										
+				</div>
+				</div>		
+			</div>	
+			<div id="mapCover" class="cover"></div>			
+			<div id="stationInfo" class="panel">		
+				<ul>
+					<li>Station ID: <span id="station_id"></span></li>
+					<li>Station Code: <span id="code"></span></li>
+					<li>Latitude: <span id="lat"></span></li>
+					<li>Longitude: <span id="lon"></span></li>
+					<li>Contributor: <span id="contrib"></span></li>
+					<li>Description: <span id="desc"></span></li>
+				</ul>
+			</div>
+			
+		</div>
+			
+		<div id="mapDiv" class="border">
+		
+			</div>
+
+
+		<div id="analyzeContainer">
+			<div id="loading">
+				<span class="label">Loading observations</span>
+			</div>			
+			<div id="series-container" class="border">		
+				<div id="shortcuts"> 
+					<img id="dlexcelicon" src="{% static "img/excel.png"%}"/>
+					<img id="screenshoticon" src="{% static "img/picture.png"%}"/>
+					
+				</div>		
+				<div id="timeline">
+					<div id="parent" class="seriesContainer"></div>
+					<div id="navigation" style="float:left;"></div>
+				</div>
+				<div id="timeline-incident">
+					<div class="seriesContainer">
+						<div class="series"></div>
+					</div>
+				</div>
+				<div id="timeline-axis">
+					<span id="xAxis" class="seriesContainer">
+						<div class="series"></div>
+					</span>
+					<span class="date-picker">
+						<div id="date-icon" style="float:left;padding-left:4px;">
+							<img src="{% static "img/calendar.png"%}">
+						</div>
+					</span>
+					<div id="date-form"	title=" Select a date range of observations">
+						<div style="clear:both;float:none">
+							<div style="float:left;width:40%">
+								<div>									
+									<input type="text" size="10" name='start' value=''  id="datePicker-start" />
+								</div>
+							</div>
+							<div style="float:left;width:40%">
+								<div style="pading-left:10px">									
+									 <input type="text" size="10"  name='end' value='' id="datePicker-end" />
+								</div>
+							</div>
+						</div>
+						<div style="float:right;width:10%;">							
+								<button id="dated-data">Ok </button>						
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		{% csrf_token %}
+
+		{% include "includes/javascript.html" %}
+		
+	</body>
 </html>
